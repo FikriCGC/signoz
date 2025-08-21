@@ -138,13 +138,8 @@ services:
       - "8040:8123"
       - "8041:9181"
     volumes:
-      - /home/administrator/signoz/clickhouse/config.xml:/etc/clickhouse-server/config.xml
-      - /home/administrator/signoz/clickhouse/users.xml:/etc/clickhouse-server/users.xml
-      - /home/administrator/signoz/clickhouse/custom-function.xml:/etc/clickhouse-server/custom-function.xml
       - /home/administrator/signoz/clickhouse/user_scripts:/var/lib/clickhouse/user_scripts/
-      - /home/administrator/signoz/clickhouse/cluster.ha.xml:/etc/clickhouse-server/config.d/cluster.xml
       - clickhouse:/var/lib/clickhouse/
-      # - /home/administrator/signoz/clickhouse/storage.xml:/etc/clickhouse-server/config.d/storage.xml
   clickhouse-2:
     !!merge <<: *clickhouse-defaults
     container_name: signoz-clickhouse-2
@@ -153,13 +148,8 @@ services:
       - "8043:8123"
       - "8044:9181"
     volumes:
-      - /home/administrator/signoz/clickhouse/config.xml:/etc/clickhouse-server/config.xml
-      - /home/administrator/signoz/clickhouse/users.xml:/etc/clickhouse-server/users.xml
-      - /home/administrator/signoz/clickhouse/custom-function.xml:/etc/clickhouse-server/custom-function.xml
       - /home/administrator/signoz/clickhouse/user_scripts:/var/lib/clickhouse/user_scripts/
-      - /home/administrator/signoz/clickhouse/cluster.ha.xml:/etc/clickhouse-server/config.d/cluster.xml
       - clickhouse-2:/var/lib/clickhouse/
-      # - /home/administrator/signoz/clickhouse/storage.xml:/etc/clickhouse-server/config.d/storage.xml
   clickhouse-3:
     !!merge <<: *clickhouse-defaults
     container_name: signoz-clickhouse-3
@@ -168,13 +158,8 @@ services:
       - "8046:8123"
       - "8047:9181"
     volumes:
-      - /home/administrator/signoz/clickhouse/config.xml:/etc/clickhouse-server/config.xml
-      - /home/administrator/signoz/clickhouse/users.xml:/etc/clickhouse-server/users.xml
-      - /home/administrator/signoz/clickhouse/custom-function.xml:/etc/clickhouse-server/custom-function.xml
       - /home/administrator/signoz/clickhouse/user_scripts:/var/lib/clickhouse/user_scripts/
-      - /home/administrator/signoz/clickhouse/cluster.ha.xml:/etc/clickhouse-server/config.d/cluster.xml
       - clickhouse-3:/var/lib/clickhouse/
-      # - /home/administrator/signoz/clickhouse/storage.xml:/etc/clickhouse-server/config.d/storage.xml
   signoz:
     !!merge <<: *db-depend
     image: signoz/signoz:${VERSION:-v0.92.1}
@@ -185,7 +170,7 @@ services:
       - "8048:8080" # signoz port
     #   - "8049:6060"     # pprof port
     volumes:
-      - /home/administrator/signoz/prometheus.yml:/root/config/prometheus.yml
+      - ./prometheus.yml:/root/config/prometheus.yml
       - /home/administrator/signoz/dashboards:/root/config/dashboards
       - sqlite:/var/lib/signoz/
     environment:
@@ -219,7 +204,7 @@ services:
       - --copy-path=/var/tmp/collector-config.yaml
       - --feature-gates=-pkg.translator.prometheus.NormalizeName
     volumes:
-      - /home/administrator/signoz/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
       - /home/administrator/signoz/otel-collector-opamp-config.yaml:/etc/manager-config.yaml
     environment:
       - OTEL_RESOURCE_ATTRIBUTES=host.name=signoz-host,os.type=linux
