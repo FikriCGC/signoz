@@ -7,9 +7,9 @@ x-common: &common
     options:
       max-size: 50m
       max-file: "3"
+
 x-clickhouse-defaults: &clickhouse-defaults
   !!merge <<: *common
-  # addding non LTS version due to this fix https://github.com/ClickHouse/ClickHouse/commit/32caf8716352f45c1b617274c7508c86b7d1afab
   image: clickhouse/clickhouse-server:24.1.2-alpine
   tty: true
   labels:
@@ -36,6 +36,7 @@ x-clickhouse-defaults: &clickhouse-defaults
     nofile:
       soft: 262144
       hard: 262144
+
 x-zookeeper-defaults: &zookeeper-defaults
   !!merge <<: *common
   image: signoz/zookeeper:3.7.1
@@ -51,6 +52,7 @@ x-zookeeper-defaults: &zookeeper-defaults
     interval: 30s
     timeout: 5s
     retries: 3
+
 x-db-depend: &db-depend
   !!merge <<: *common
   depends_on:
@@ -58,6 +60,7 @@ x-db-depend: &db-depend
       condition: service_healthy
     schema-migrator-sync:
       condition: service_completed_successfully
+
 services:
   init-clickhouse:
     !!merge <<: *common
@@ -78,13 +81,12 @@ services:
     restart: on-failure
     volumes:
       - ../common/clickhouse/user_scripts:/var/lib/clickhouse/user_scripts/
+
   zookeeper-1:
     !!merge <<: *zookeeper-defaults
     container_name: signoz-zookeeper-1
-    # ports:
-    #   - "2181:2181"
-    #   - "2888:2888"
-    #   - "3888:3888"
+    ports:
+      - "8027:9141"  # Prometheus metrics
     volumes:
       - zookeeper-1:/bitnami/zookeeper
     environment:
@@ -93,13 +95,13 @@ services:
       - ZOO_AUTOPURGE_INTERVAL=1
       - ZOO_ENABLE_PROMETHEUS_METRICS=yes
       - ZOO_PROMETHEUS_METRICS_PORT_NUMBER=9141
+
   clickhouse:
     !!merge <<: *clickhouse-defaults
     container_name: signoz-clickhouse
-    # ports:
-    #   - "9000:9000"
-    #   - "8123:8123"
-    #   - "9181:9181"
+    ports:
+      - "8028:8123"  # HTTP
+      - "8029:9000"  # TCP
     volumes:
       - ../common/clickhouse/config.xml:/etc/clickhouse-server/config.xml
       - ../common/clickhouse/users.xml:/etc/clickhouse-server/users.xml
@@ -107,7 +109,7 @@ services:
       - ../common/clickhouse/user_scripts:/var/lib/clickhouse/user_scripts/
       - ../common/clickhouse/cluster.xml:/etc/clickhouse-server/config.d/cluster.xml
       - clickhouse:/var/lib/clickhouse/
-      # - ../common/clickhouse/storage.xml:/etc/clickhouse-server/config.d/storage.xml
+
   signoz:
     !!merge <<: *db-depend
     image: signoz/signoz:${VERSION:-v0.92.1}
@@ -115,8 +117,7 @@ services:
     command:
       - --config=/root/config/prometheus.yml
     ports:
-      - "8080:8080" # signoz port
-    #   - "6060:6060"     # pprof port
+      - "8024:8080" # Signoz Web UI
     volumes:
       - ../common/signoz/prometheus.yml:/root/config/prometheus.yml
       - ../common/dashboards:/root/config/dashboards
@@ -141,6 +142,7 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+
   otel-collector:
     !!merge <<: *db-depend
     image: signoz/signoz-otel-collector:${OTELCOL_TAG:-v0.129.0}
@@ -150,19 +152,19 @@ services:
       - --manager-config=/etc/manager-config.yaml
       - --copy-path=/var/tmp/collector-config.yaml
       - --feature-gates=-pkg.translator.prometheus.NormalizeName
+    ports:
+      - "8025:4317" # OTLP gRPC
+      - "8026:4318" # OTLP HTTP
     volumes:
       - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
       - ../common/signoz/otel-collector-opamp-config.yaml:/etc/manager-config.yaml
     environment:
       - OTEL_RESOURCE_ATTRIBUTES=host.name=signoz-host,os.type=linux
       - LOW_CARDINAL_EXCEPTION_GROUPING=false
-    ports:
-      # - "1777:1777"     # pprof extension
-      - "4317:4317" # OTLP gRPC receiver
-      - "4318:4318" # OTLP HTTP receiver
     depends_on:
       signoz:
         condition: service_healthy
+
   schema-migrator-sync:
     !!merge <<: *common
     image: signoz/signoz-schema-migrator:${OTELCOL_TAG:-v0.129.0}
@@ -175,6 +177,7 @@ services:
       clickhouse:
         condition: service_healthy
     restart: on-failure
+
   schema-migrator-async:
     !!merge <<: *db-depend
     image: signoz/signoz-schema-migrator:${OTELCOL_TAG:-v0.129.0}
@@ -184,9 +187,11 @@ services:
       - --dsn=tcp://clickhouse:9000
       - --up=
     restart: on-failure
+
 networks:
   signoz-net:
     name: signoz-net
+
 volumes:
   clickhouse:
     name: signoz-clickhouse
