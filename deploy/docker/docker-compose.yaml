@@ -15,15 +15,6 @@ x-clickhouse-defaults: &clickhouse-defaults
     signoz.io/scrape: "true"
     signoz.io/port: "9363"
     signoz.io/path: "/metrics"
-  depends_on:
-    init-clickhouse:
-      condition: service_completed_successfully
-    zookeeper-1:
-      condition: service_healthy
-    zookeeper-2:
-      condition: service_healthy
-    zookeeper-3:
-      condition: service_healthy
   healthcheck:
     test:
       - CMD
@@ -32,8 +23,8 @@ x-clickhouse-defaults: &clickhouse-defaults
       - -q
       - 0.0.0.0:8123/ping
     interval: 30s
-    timeout: 5s
-    retries: 3
+    timeout: 10s
+    retries: 5
   ulimits:
     nproc: 65535
     nofile:
@@ -49,12 +40,10 @@ x-zookeeper-defaults: &zookeeper-defaults
     signoz.io/port: "9141"
     signoz.io/path: "/metrics"
   healthcheck:
-    test:
-      - CMD-SHELL
-      - curl -s -m 2 http://localhost:8080/commands/ruok | grep error | grep null
+    test: ["CMD", "zkServer.sh", "status"]
     interval: 30s
-    timeout: 5s
-    retries: 3
+    timeout: 10s
+    retries: 5
 
 x-db-depend: &db-depend
   !!merge <<: *common
@@ -76,61 +65,21 @@ services:
         version="v0.0.1"
         node_os=$$(uname -s | tr '[:upper:]' '[:lower:]')
         node_arch=$$(uname -m | sed s/aarch64/arm64/ | sed s/x86_64/amd64/)
-        echo "Fetching histogram-binary for $${node_os}/$${node_arch}"
         cd /tmp
         wget -O histogram-quantile.tar.gz "https://github.com/SigNoz/signoz/releases/download/histogram-quantile%2F$${version}/histogram-quantile_$${node_os}_$${node_arch}.tar.gz"
         tar -xvzf histogram-quantile.tar.gz
         mv histogram-quantile /var/lib/clickhouse/user_scripts/histogramQuantile
     restart: on-failure
     volumes:
-      - clickhouse:/var/lib/clickhouse/
+      - ../common/clickhouse/user_scripts:/var/lib/clickhouse/user_scripts/
 
   zookeeper-1:
     !!merge <<: *zookeeper-defaults
     container_name: signoz-zookeeper-1
-    ports:
-      - "8030:2181"
-      - "8031:2888"
-      - "8032:3888"
     volumes:
       - zookeeper-1:/bitnami/zookeeper
     environment:
       - ZOO_SERVER_ID=1
-      - ZOO_SERVERS=0.0.0.0:2888:3888,zookeeper-2:2888:3888,zookeeper-3:2888:3888
-      - ALLOW_ANONYMOUS_LOGIN=yes
-      - ZOO_AUTOPURGE_INTERVAL=1
-      - ZOO_ENABLE_PROMETHEUS_METRICS=yes
-      - ZOO_PROMETHEUS_METRICS_PORT_NUMBER=9141
-
-  zookeeper-2:
-    !!merge <<: *zookeeper-defaults
-    container_name: signoz-zookeeper-2
-    ports:
-      - "8033:2181"
-      - "8034:2888"
-      - "8035:3888"
-    volumes:
-      - zookeeper-2:/bitnami/zookeeper
-    environment:
-      - ZOO_SERVER_ID=2
-      - ZOO_SERVERS=zookeeper-1:2888:3888,0.0.0.0:2888:3888,zookeeper-3:2888:3888
-      - ALLOW_ANONYMOUS_LOGIN=yes
-      - ZOO_AUTOPURGE_INTERVAL=1
-      - ZOO_ENABLE_PROMETHEUS_METRICS=yes
-      - ZOO_PROMETHEUS_METRICS_PORT_NUMBER=9141
-
-  zookeeper-3:
-    !!merge <<: *zookeeper-defaults
-    container_name: signoz-zookeeper-3
-    ports:
-      - "8036:2181"
-      - "8037:2888"
-      - "8038:3888"
-    volumes:
-      - zookeeper-3:/bitnami/zookeeper
-    environment:
-      - ZOO_SERVER_ID=3
-      - ZOO_SERVERS=zookeeper-1:2888:3888,zookeeper-2:2888:3888,0.0.0.0:2888:3888
       - ALLOW_ANONYMOUS_LOGIN=yes
       - ZOO_AUTOPURGE_INTERVAL=1
       - ZOO_ENABLE_PROMETHEUS_METRICS=yes
@@ -140,31 +89,16 @@ services:
     !!merge <<: *clickhouse-defaults
     container_name: signoz-clickhouse
     ports:
-      - "8039:9000"
-      - "8040:8123"
-      - "8041:9181"
+      - "8025:9000" # mapped TCP port
+      - "8123:8123" # HTTP port
+      - "9181:9181"
     volumes:
+      - ../common/clickhouse/config.xml:/etc/clickhouse-server/config.xml
+      - ../common/clickhouse/users.xml:/etc/clickhouse-server/users.xml
+      - ../common/clickhouse/custom-function.xml:/etc/clickhouse-server/custom-function.xml
+      - ../common/clickhouse/user_scripts:/var/lib/clickhouse/user_scripts/
+      - ../common/clickhouse/cluster.xml:/etc/clickhouse-server/config.d/cluster.xml
       - clickhouse:/var/lib/clickhouse/
-
-  clickhouse-2:
-    !!merge <<: *clickhouse-defaults
-    container_name: signoz-clickhouse-2
-    ports:
-      - "8042:9000"
-      - "8043:8123"
-      - "8044:9181"
-    volumes:
-      - clickhouse-2:/var/lib/clickhouse/
-
-  clickhouse-3:
-    !!merge <<: *clickhouse-defaults
-    container_name: signoz-clickhouse-3
-    ports:
-      - "8045:9000"
-      - "8046:8123"
-      - "8047:9181"
-    volumes:
-      - clickhouse-3:/var/lib/clickhouse/
 
   signoz:
     !!merge <<: *db-depend
@@ -173,17 +107,21 @@ services:
     command:
       - --config=/root/config/prometheus.yml
     ports:
-      - "8048:8080"
+      - "8024:8080"
     volumes:
-      - ./prometheus.yml:/root/config/prometheus.yml
+      - ../common/signoz/prometheus.yml:/root/config/prometheus.yml
+      - ../common/dashboards:/root/config/dashboards
       - sqlite:/var/lib/signoz/
     environment:
       - SIGNOZ_ALERTMANAGER_PROVIDER=signoz
       - SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN=tcp://clickhouse:9000
       - SIGNOZ_SQLSTORE_SQLITE_PATH=/var/lib/signoz/signoz.db
+      - DASHBOARDS_PATH=/root/config/dashboards
       - STORAGE=clickhouse
+      - GODEBUG=netdns=go
       - TELEMETRY_ENABLED=true
       - DEPLOYMENT_TYPE=docker-standalone-amd
+      - DOT_METRICS_ENABLED=true
     healthcheck:
       test:
         - CMD
@@ -192,8 +130,8 @@ services:
         - -q
         - localhost:8080/api/v1/health
       interval: 30s
-      timeout: 5s
-      retries: 3
+      timeout: 10s
+      retries: 5
 
   otel-collector:
     !!merge <<: *db-depend
@@ -206,17 +144,14 @@ services:
       - --feature-gates=-pkg.translator.prometheus.NormalizeName
     volumes:
       - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
-      - ./otel-collector-opamp-config.yaml:/etc/manager-config.yaml
+      - ../common/signoz/otel-collector-opamp-config.yaml:/etc/manager-config.yaml
     environment:
       - OTEL_RESOURCE_ATTRIBUTES=host.name=signoz-host,os.type=linux
+      - LOW_CARDINAL_EXCEPTION_GROUPING=false
     ports:
-      - "8051:4317"
-      - "8052:4318"
+      - "4317:4317"
+      - "4318:4318"
     depends_on:
-      clickhouse:
-        condition: service_healthy
-      schema-migrator-sync:
-        condition: service_completed_successfully
       signoz:
         condition: service_healthy
 
@@ -227,10 +162,11 @@ services:
     command:
       - sync
       - --dsn=tcp://clickhouse:9000
-      - --dev
+      - --up=
     depends_on:
       clickhouse:
         condition: service_healthy
+    restart: on-failure
 
   schema-migrator-async:
     !!merge <<: *db-depend
@@ -249,15 +185,7 @@ networks:
 volumes:
   clickhouse:
     name: signoz-clickhouse
-  clickhouse-2:
-    name: signoz-clickhouse-2
-  clickhouse-3:
-    name: signoz-clickhouse-3
   sqlite:
     name: signoz-sqlite
   zookeeper-1:
     name: signoz-zookeeper-1
-  zookeeper-2:
-    name: signoz-zookeeper-2
-  zookeeper-3:
-    name: signoz-zookeeper-3
