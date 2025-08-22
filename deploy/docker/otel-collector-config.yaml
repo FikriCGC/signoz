@@ -31,8 +31,8 @@ receivers:
           #   username: "your-jenkins-user"
           #   password: "your-api-token"
           # Optional for self-signed TLS
-          # tls_config:
-          #   insecure_skip_verify: true
+          tls_config:
+            insecure_skip_verify: true
   filelog:
     include: [ /logs/telemetry-*.log ]
     start_at: beginning
