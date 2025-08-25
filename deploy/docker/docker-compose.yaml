@@ -89,8 +89,8 @@ services:
     !!merge <<: *clickhouse-defaults
     container_name: signoz-clickhouse
     ports:
-      - "8025:9000" # mapped TCP port
-      - "8123:8123" # HTTP port
+      - "8025:9000"
+      - "8123:8123"
       - "9181:9181"
     volumes:
       - ../common/clickhouse/config.xml:/etc/clickhouse-server/config.xml
@@ -145,7 +145,6 @@ services:
     volumes:
       - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
       - ../common/signoz/otel-collector-opamp-config.yaml:/etc/manager-config.yaml
-      - /home/administrator/logs/general-services:/logs
       - /var/run/docker.sock:/var/run/docker.sock  
       - /:/hostfs:ro                 
     environment:
