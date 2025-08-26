@@ -33,20 +33,20 @@ receivers:
     start_at: beginning
     include_file_path: false
 
-  hostmetrics:
-    collection_interval: 30s
-    scrapers:
-      cpu:
-      memory:
-      disk:
-      filesystem:
-      load:
-      network:
-      processes:
+  # hostmetrics:
+  #   collection_interval: 30s
+  #   scrapers:
+  #     cpu:
+  #     memory:
+  #     disk:
+  #     filesystem:
+  #     load:
+  #     network:
+  #     processes:
 
-  docker_stats:
-    endpoint: unix:///var/run/docker.sock
-    collection_interval: 30s
+  # docker_stats:
+  #   endpoint: unix:///var/run/docker.sock
+  #   collection_interval: 30s
 
 processors:
   batch:
