@@ -30,12 +30,6 @@ x-clickhouse-defaults: &clickhouse-defaults
     nofile:
       soft: 262144
       hard: 262144
-  deploy:
-    resources:
-      limits:
-        memory: 512M
-      reservations:
-        memory: 256M
 
 x-zookeeper-defaults: &zookeeper-defaults
   !!merge <<: *common
@@ -50,10 +44,6 @@ x-zookeeper-defaults: &zookeeper-defaults
     interval: 30s
     timeout: 10s
     retries: 5
-  deploy:
-    resources:
-      limits:
-        memory: 256M
 
 x-db-depend: &db-depend
   !!merge <<: *common
@@ -108,7 +98,7 @@ services:
       - ../common/clickhouse/custom-function.xml:/etc/clickhouse-server/custom-function.xml
       - ../common/clickhouse/user_scripts:/var/lib/clickhouse/user_scripts/
       - ../common/clickhouse/cluster.xml:/etc/clickhouse-server/config.d/cluster.xml
-      - /Users/administrator/linux_logs/general-services:/logs
+      - /home/administrator/logs/general-services:/logs
       - clickhouse:/var/lib/clickhouse/
 
   signoz:
@@ -143,10 +133,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-    deploy:
-      resources:
-        limits:
-          memory: 256M
 
   otel-collector:
     !!merge <<: *db-depend
@@ -160,6 +146,8 @@ services:
     volumes:
       - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
       - ../common/signoz/otel-collector-opamp-config.yaml:/etc/manager-config.yaml
+      # - /var/run/docker.sock:/var/run/docker.sock  
+      # - /:/hostfs:ro                 
     environment:
       - OTEL_RESOURCE_ATTRIBUTES=host.name=signoz-host,os.type=linux
       - LOW_CARDINAL_EXCEPTION_GROUPING=false
@@ -169,10 +157,6 @@ services:
     depends_on:
       signoz:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          memory: 256M
 
   schema-migrator-sync:
     !!merge <<: *common
