@@ -17,19 +17,8 @@ receivers:
               labels:
                 job_name: otel-collector
 
-        - job_name: jenkins
-          metrics_path: /jenkins/prometheus
-          scrape_interval: 30s
-          scheme: https
-          static_configs:
-            - targets: ["dashboard.citaglobalcapital.my"]
-              labels:
-                service: jenkins
-          tls_config:
-            insecure_skip_verify: true
-
   filelog:
-    include: [ /logs/telemetry-*.log ]
+    include: [ /logs/*.log ]
     start_at: beginning
     include_file_path: false
 

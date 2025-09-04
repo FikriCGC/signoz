@@ -99,6 +99,14 @@ services:
       - ../common/clickhouse/user_scripts:/var/lib/clickhouse/user_scripts/
       - ../common/clickhouse/cluster.xml:/etc/clickhouse-server/config.d/cluster.xml
       - /home/administrator/logs/general-services:/logs
+      - /home/administrator/logs/trustgate-services:/logs
+      - /home/administrator/logs/scheduler-services:/logs
+      - /home/administrator/logs/odoo-log:/logs
+      - /home/administrator/logs/notification-services:/logs
+      - /home/administrator/logs/loan-services:/logs
+      - /home/administrator/logs/experian-services:/logs
+      - /home/administrator/logs/application-services:/logs
+      - /home/administrator/logs/airflow:/logs
       - clickhouse:/var/lib/clickhouse/
 
   signoz:
