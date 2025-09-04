@@ -155,6 +155,6 @@ service:
       exporters: [signozclickhousemetrics]
 
     logs:
-      receivers: [otlp, filelog/general-services, filelog/trustgate-services, filelog/scheduler-services, filelog/odoo, filelog/notification-services, filelog/loan-services, filelog/experian-services, filelog/application-services, filelog/airflow]
+      receivers: [otlp, filelog/general-services, filelog/trustgate-services, filelog/scheduler-services, filelog/odoo, filelog/notification-services, filelog/loan-services, filelog/experian-services, filelog/application-services]
       processors: [batch]
       exporters: [clickhouselogsexporter]
