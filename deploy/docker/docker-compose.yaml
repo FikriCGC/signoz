@@ -99,15 +99,6 @@ services:
       - ../common/clickhouse/user_scripts:/var/lib/clickhouse/user_scripts/
       - ../common/clickhouse/cluster.xml:/etc/clickhouse-server/config.d/cluster.xml
       - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
-      - /home/administrator/logs/general-services:/logs/general-services
-      - /home/administrator/logs/trustgate-services:/logs/trustgate-services
-      - /home/administrator/logs/scheduler-services:/logs/scheduler-services
-      - /home/administrator/logs/odoo-log:/logs/odoo-log
-      - /home/administrator/logs/notification-services:/logs/notification-services
-      - /home/administrator/logs/loan-services:/logs/loan-services
-      - /home/administrator/logs/experian-services:/logs/experian-services
-      - /home/administrator/logs/application-services:/logs/application-services
-      - /home/administrator/logs/airflow:/logs/airflow
 
   signoz:
     !!merge <<: *db-depend
@@ -154,6 +145,14 @@ services:
     volumes:
       - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
       - ../common/signoz/otel-collector-opamp-config.yaml:/etc/manager-config.yaml
+      - /home/administrator/logs/general-services:/logs/general-services
+      - /home/administrator/logs/trustgate-services:/logs/trustgate-services
+      - /home/administrator/logs/scheduler-services:/logs/scheduler-services
+      - /home/administrator/logs/odoo-log:/logs/odoo-log
+      - /home/administrator/logs/notification-services:/logs/notification-services
+      - /home/administrator/logs/loan-services:/logs/loan-services
+      - /home/administrator/logs/experian-services:/logs/experian-services
+      - /home/administrator/logs/application-services:/logs/application-services
       # - /var/run/docker.sock:/var/run/docker.sock  
       # - /:/hostfs:ro                 
     environment:

@@ -73,13 +73,6 @@ receivers:
     attributes:
       service.name: application-services
 
-  filelog/airflow:
-    include: [ /logs/airflow/*.log ]
-    start_at: beginning
-    include_file_path: true
-    attributes:
-      service.name: airflow
-
   hostmetrics:
     collection_interval: 30s
     scrapers:
