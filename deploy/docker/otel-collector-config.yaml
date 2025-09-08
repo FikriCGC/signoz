@@ -185,7 +185,7 @@ service:
       exporters: [clickhousetraces]
 
     metrics:
-      receivers: [otlp, hostmetrics] 
+      receivers: [otlp, hostmetrics, rabbitmq] 
       processors: [batch]
       exporters: [signozclickhousemetrics]
 
