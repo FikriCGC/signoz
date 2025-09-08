@@ -157,11 +157,14 @@ services:
       - /home/administrator/logs/loan-services:/logs/loan-services
       - /home/administrator/logs/experian-services:/logs/experian-services
       - /home/administrator/logs/application-services:/logs/application-services
-      # - /var/run/docker.sock:/var/run/docker.sock  
-      # - /:/hostfs:ro                 
+      - /proc:/host/proc:ro          
+      - /sys:/host/sys:ro       
+      - /var/run/docker.sock:/var/run/docker.sock  
     environment:
       - OTEL_RESOURCE_ATTRIBUTES=host.name=signoz-host,os.type=linux
       - LOW_CARDINAL_EXCEPTION_GROUPING=false
+      - HOST_PROC=/host/proc 
+      - HOST_SYS=/host/sys          
     ports:
       - "4317:4317"
       - "4318:4318"
