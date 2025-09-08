@@ -19,16 +19,6 @@ receivers:
         - job_name: "rabbitmq"
           static_configs:
             - targets: ["103.118.21.227:15692"]
-            
-  hostmetrics:
-    collection_interval: 60s  
-    scrapers:
-      cpu: {}
-      load: {}
-      memory: {}
-      disk: {}
-      filesystem: {}
-      network: {}
 
   filelog/general-services:
     include: [/logs/general-services/*.log]
@@ -89,13 +79,13 @@ receivers:
   hostmetrics:
     collection_interval: 30s
     scrapers:
-      cpu:
-      memory:
-      disk:
-      filesystem:
-      load:
-      network:
-      processes:
+      cpu: {}
+      memory: {}
+      disk: {}
+      filesystem: {}
+      load: {}
+      network: {}
+      processes: {}
 
 processors:
   batch:
