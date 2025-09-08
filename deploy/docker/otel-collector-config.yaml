@@ -9,105 +9,69 @@ receivers:
   prometheus:
     config:
       global:
-        scrape_interval: 60s
+        scrape_interval: 15s
       scrape_configs:
         - job_name: otel-collector
           static_configs:
             - targets: ["localhost:8888"]
               labels:
                 job_name: otel-collector
-  rabbitmq:
-    endpoint: http://103.118.21.227:15672
-    username: admin
-    password: admin
-    collection_interval: 10s
-    metrics: 
-      rabbitmq.node.disk_free:
-        enabled: true
-      rabbitmq.node.disk_free_limit:
-        enabled: true
-      rabbitmq.node.disk_free_alarm:
-        enabled: true
-      rabbitmq.node.mem_used:
-        enabled: true
-      rabbitmq.node.mem_limit:
-        enabled: true
-      rabbitmq.node.mem_alarm:
-        enabled: true
-      rabbitmq.node.fd_used:
-        enabled: true
-      rabbitmq.node.fd_total:
-        enabled: true
-      rabbitmq.node.sockets_used:
-        enabled: true
-      rabbitmq.node.sockets_total:
-        enabled: true
-      rabbitmq.node.proc_used:
-        enabled: true
-      rabbitmq.node.proc_total:
-        enabled: true
-      rabbitmq.node.disk_free_details.rate:
-        enabled: true
-      rabbitmq.node.fd_used_details.rate:
-        enabled: true
-      rabbitmq.node.mem_used_details.rate:
-        enabled: true
-      rabbitmq.node.proc_used_details.rate:
-        enabled: true
-      rabbitmq.node.sockets_used_details.rate:
-        enabled: true
+
+        - job_name: rabbitmq
+          static_configs:
+            - targets: ["103.118.21.227:15692"]
 
   filelog/general-services:
-    include: [ /logs/general-services/*.log ]
+    include: [/logs/general-services/*.log]
     start_at: beginning
     include_file_path: true
     attributes:
       service.name: general-services
 
   filelog/trustgate-services:
-    include: [ /logs/trustgate-services/*.log ]
+    include: [/logs/trustgate-services/*.log]
     start_at: beginning
     include_file_path: true
     attributes:
       service.name: trustgate-services
 
   filelog/scheduler-services:
-    include: [ /logs/scheduler-services/*.log ]
+    include: [/logs/scheduler-services/*.log]
     start_at: beginning
     include_file_path: true
     attributes:
       service.name: scheduler-services
 
   filelog/odoo:
-    include: [ /logs/odoo-log/*.log ]
+    include: [/logs/odoo-log/*.log]
     start_at: beginning
     include_file_path: true
     attributes:
       service.name: odoo
 
   filelog/notification-services:
-    include: [ /logs/notification-services/*.log ]
+    include: [/logs/notification-services/*.log]
     start_at: beginning
     include_file_path: true
     attributes:
       service.name: notification-services
 
   filelog/loan-services:
-    include: [ /logs/loan-services/*.log ]
+    include: [/logs/loan-services/*.log]
     start_at: beginning
     include_file_path: true
     attributes:
       service.name: loan-services
 
   filelog/experian-services:
-    include: [ /logs/experian-services/*.log ]
+    include: [/logs/experian-services/*.log]
     start_at: beginning
     include_file_path: true
     attributes:
       service.name: experian-services
 
   filelog/application-services:
-    include: [ /logs/application-services/*.log ]
+    include: [/logs/application-services/*.log]
     start_at: beginning
     include_file_path: true
     attributes:
@@ -135,7 +99,26 @@ processors:
   signozspanmetrics/delta:
     metrics_exporter: signozclickhousemetrics
     metrics_flush_interval: 60s
-    latency_histogram_buckets: [100us, 1ms, 2ms, 6ms, 10ms, 50ms, 100ms, 250ms, 500ms, 1000ms, 1400ms, 2000ms, 5s, 10s, 20s, 40s, 60s ]
+    latency_histogram_buckets:
+      [
+        100us,
+        1ms,
+        2ms,
+        6ms,
+        10ms,
+        50ms,
+        100ms,
+        250ms,
+        500ms,
+        1000ms,
+        1400ms,
+        2000ms,
+        5s,
+        10s,
+        20s,
+        40s,
+        60s,
+      ]
     dimensions_cache_size: 100000
     aggregation_temporality: AGGREGATION_TEMPORALITY_DELTA
     enable_exp_histogram: true
@@ -185,16 +168,22 @@ service:
       exporters: [clickhousetraces]
 
     metrics:
-      receivers: [otlp, hostmetrics, rabbitmq] 
-      processors: [batch]
-      exporters: [signozclickhousemetrics]
-
-    metrics/prometheus:
-      receivers: [prometheus]
+      receivers: [otlp, hostmetrics, prometheus]
       processors: [batch]
       exporters: [signozclickhousemetrics]
 
     logs:
-      receivers: [otlp, filelog/general-services, filelog/trustgate-services, filelog/scheduler-services, filelog/odoo, filelog/notification-services, filelog/loan-services, filelog/experian-services, filelog/application-services]
+      receivers:
+        [
+          otlp,
+          filelog/general-services,
+          filelog/trustgate-services,
+          filelog/scheduler-services,
+          filelog/odoo,
+          filelog/notification-services,
+          filelog/loan-services,
+          filelog/experian-services,
+          filelog/application-services,
+        ]
       processors: [batch]
       exporters: [clickhouselogsexporter]
