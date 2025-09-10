@@ -86,6 +86,7 @@ receivers:
       load: {}
       network: {}
       processes: {}
+      container: {}
 
 processors:
   batch:
