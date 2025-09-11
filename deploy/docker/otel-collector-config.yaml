@@ -16,77 +16,6 @@ receivers:
             - targets: ["localhost:8888"]
               labels:
                 job_name: otel-collector
-        - job_name: "rabbitmq"
-          static_configs:
-            - targets: ['host.docker.internal:15692']
-
-  filelog/general-services:
-    include: [/logs/general-services/*.log]
-    start_at: beginning
-    include_file_path: true
-    attributes:
-      service.name: general-services
-
-  filelog/trustgate-services:
-    include: [/logs/trustgate-services/*.log]
-    start_at: beginning
-    include_file_path: true
-    attributes:
-      service.name: trustgate-services
-
-  filelog/scheduler-services:
-    include: [/logs/scheduler-services/*.log]
-    start_at: beginning
-    include_file_path: true
-    attributes:
-      service.name: scheduler-services
-
-  filelog/odoo:
-    include: [/logs/odoo-log/*.log]
-    start_at: beginning
-    include_file_path: true
-    attributes:
-      service.name: odoo
-
-  filelog/notification-services:
-    include: [/logs/notification-services/*.log]
-    start_at: beginning
-    include_file_path: true
-    attributes:
-      service.name: notification-services
-
-  filelog/loan-services:
-    include: [/logs/loan-services/*.log]
-    start_at: beginning
-    include_file_path: true
-    attributes:
-      service.name: loan-services
-
-  filelog/experian-services:
-    include: [/logs/experian-services/*.log]
-    start_at: beginning
-    include_file_path: true
-    attributes:
-      service.name: experian-services
-
-  filelog/application-services:
-    include: [/logs/application-services/*.log]
-    start_at: beginning
-    include_file_path: true
-    attributes:
-      service.name: application-services
-
-  hostmetrics:
-    collection_interval: 30s
-    scrapers:
-      cpu: {}
-      memory: {}
-      disk: {}
-      filesystem: {}
-      load: {}
-      network: {}
-      processes: {}
-
 processors:
   batch:
     send_batch_size: 10000
@@ -163,7 +92,7 @@ service:
       exporters: [clickhousetraces]
 
     metrics:
-      receivers: [otlp, hostmetrics]
+      receivers: [otlp]
       processors: [resourcedetection, batch]
       exporters: [signozclickhousemetrics]
 
