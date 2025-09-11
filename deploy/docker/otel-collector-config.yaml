@@ -94,14 +94,6 @@ service:
       receivers:
         [
           otlp,
-          filelog/general-services,
-          filelog/trustgate-services,
-          filelog/scheduler-services,
-          filelog/odoo,
-          filelog/notification-services,
-          filelog/loan-services,
-          filelog/experian-services,
-          filelog/application-services,
         ]
       processors: [resourcedetection, batch]
       exporters: [clickhouselogsexporter]
